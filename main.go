@@ -37,7 +37,7 @@ func buildRequestId() (string, error) {
 	return clean, nil
 }
 
-func NewMemoryServer(host, port string) *memoryServer {
+func New(host, port string) *memoryServer {
 	return &memoryServer{
 		host:            host,
 		port:            port,
