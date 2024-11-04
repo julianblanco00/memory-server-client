@@ -98,6 +98,10 @@ func (ms *memoryServer) handleRequest(cmd string) ([]byte, error) {
 	return r, nil
 }
 
-func (ms *memoryServer) Get(cmd string) ([]byte, error) {
-	return ms.handleRequest(buildRESPCommand("GET", cmd))
+func (ms *memoryServer) Get(key string) ([]byte, error) {
+	return ms.handleRequest(buildRESPCommand("GET", key))
+}
+
+func (ms *memoryServer) Set(key, val string) ([]byte, error) {
+	return ms.handleRequest(buildRESPCommand("GET", key, val))
 }
