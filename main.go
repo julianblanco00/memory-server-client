@@ -98,6 +98,10 @@ func (ms *memoryServer) handleRequest(cmd string) ([]byte, error) {
 
 	r := <-c
 
+	if len(r) == 0 {
+		return nil, nil
+	}
+
 	return r, nil
 }
 
