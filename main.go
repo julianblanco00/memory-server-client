@@ -103,5 +103,5 @@ func (ms *memoryServer) Get(key string) ([]byte, error) {
 }
 
 func (ms *memoryServer) Set(key, val string) ([]byte, error) {
-	return ms.handleRequest(buildRESPCommand("GET", key, val))
+	return ms.handleRequest(buildRESPCommand("SET", key, val))
 }
