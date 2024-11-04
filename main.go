@@ -9,7 +9,7 @@ import (
 	"github.com/google/uuid"
 )
 
-type MemoryServer struct {
+type memoryServer struct {
 	client          net.Conn
 	pendingRequests map[string]chan ([]byte)
 	host            string
@@ -37,15 +37,15 @@ func buildRequestId() (string, error) {
 	return clean, nil
 }
 
-func NewMemoryServer(host, port string) *MemoryServer {
-	return &MemoryServer{
+func NewMemoryServer(host, port string) *memoryServer {
+	return &memoryServer{
 		host:            host,
 		port:            port,
 		pendingRequests: make(map[string]chan ([]byte)),
 	}
 }
 
-func (ms *MemoryServer) listenConnectionEvents() (string, error) {
+func (ms *memoryServer) listenConnectionEvents() (string, error) {
 	for {
 		buf := make([]byte, 1024)
 		n, err := ms.client.Read(buf)
@@ -59,7 +59,7 @@ func (ms *MemoryServer) listenConnectionEvents() (string, error) {
 	}
 }
 
-func (ms *MemoryServer) Connect() error {
+func (ms *memoryServer) Connect() error {
 	conn, err := net.Dial("tcp", fmt.Sprintf("%s:%s", ms.host, ms.port))
 	if err != nil {
 		return err
@@ -72,7 +72,7 @@ func (ms *MemoryServer) Connect() error {
 	return nil
 }
 
-func (ms *MemoryServer) handleRequest(cmd string) ([]byte, error) {
+func (ms *memoryServer) handleRequest(cmd string) ([]byte, error) {
 	c := make(chan []byte)
 	id, err := buildRequestId()
 	if err != nil {
@@ -98,24 +98,6 @@ func (ms *MemoryServer) handleRequest(cmd string) ([]byte, error) {
 	return r, nil
 }
 
-func (ms *MemoryServer) Get(cmd string) ([]byte, error) {
+func (ms *memoryServer) Get(cmd string) ([]byte, error) {
 	return ms.handleRequest(buildRESPCommand("GET", cmd))
 }
-
-// func main() {
-// 	ms := NewMemoryServer("localhost", "4444")
-// 	err := ms.Connect()
-// 	if err != nil {
-// 		os.Exit(1)
-// 	}
-//
-// 	fmt.Println("connected to memory server!")
-//
-// 	mykey, err := ms.Get("mykey")
-// 	if err != nil {
-// 		fmt.Println(err)
-// 		os.Exit(1)
-// 	}
-//
-// 	fmt.Println(mykey, string(mykey))
-// }
