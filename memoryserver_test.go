@@ -14,14 +14,28 @@ func TestMemoryServer(t *testing.T) {
 		return
 	}
 
-	t.Run("get empty key", func(t *testing.T) {
+	t.Run("set key", func(t *testing.T) {
+		v, err := ms.Set("mykey", "myvalue")
+		if err != nil {
+			t.Error("error setting mykey")
+		}
+		if string(v) != "OK" {
+			t.Error("error setting mykey")
+		}
+	})
+
+	t.Run("get non-empty key", func(t *testing.T) {
 		v, err := ms.Get("mykey")
 		if err != nil {
 			t.Error("error getting mykey")
 		}
 
-		if len(v) > 0 {
-			t.Error("value for mykey exists")
+		if v == nil {
+			t.Error("value for mykey does not exists")
+		}
+
+		if string(v) != "myvalue" {
+			t.Error("value set before does not match current value")
 		}
 	})
 }
