@@ -2,6 +2,7 @@ package memoryserver
 
 import (
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"net"
 	"strings"
@@ -102,6 +103,43 @@ func (ms *memoryServer) Get(key string) ([]byte, error) {
 	return ms.handleRequest(buildRESPCommand("GET", key))
 }
 
+func (ms *memoryServer) Del(key ...string) ([]byte, error) {
+	keys := []string{"DEL"}
+
+	for _, k := range key {
+		keys = append(keys, k)
+	}
+
+	return ms.handleRequest(buildRESPCommand(keys...))
+}
+
 func (ms *memoryServer) Set(key, val string) ([]byte, error) {
 	return ms.handleRequest(buildRESPCommand("SET", key, val))
+}
+
+func (ms *memoryServer) SetWithOpts(key, val string, opts [][]string) ([]byte, error) {
+	cmd := []string{"SET", key, val}
+	for _, opt := range opts {
+		cmd = append(cmd, opt...)
+	}
+
+	return ms.handleRequest(buildRESPCommand(cmd...))
+}
+
+func (ms *memoryServer) mSet(params ...string) ([]byte, error) {
+	if len(params)%2 == 1 {
+		return []byte{}, errors.New("missing values in input for mSet command")
+	}
+
+	kvs := []string{"MSET"}
+
+	for _, p := range params {
+		kvs = append(kvs, p)
+	}
+
+	return ms.handleRequest(buildRESPCommand(kvs...))
+}
+
+func (ms *memoryServer) hSet(key string, params ...interface{}) ([]byte, error) {
+	return []byte{}, nil
 }
