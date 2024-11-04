@@ -51,11 +51,13 @@ func (ms *memoryServer) listenConnectionEvents() (string, error) {
 		buf := make([]byte, 1024)
 		n, err := ms.client.Read(buf)
 		if err != nil {
+			// TODO: handle this error better
 			return "", err
 		}
 
 		id := hex.EncodeToString(buf[:16])
 		c := ms.pendingRequests[id]
+
 		c <- buf[16:n]
 	}
 }
@@ -141,5 +143,29 @@ func (ms *memoryServer) mSet(params ...string) ([]byte, error) {
 }
 
 func (ms *memoryServer) hSet(key string, params ...interface{}) ([]byte, error) {
-	return []byte{}, nil
+	// params can be: [field, value, field, value, ...] or map[string]string
+	cmd := []string{key}
+
+	switch param := params[0].(type) {
+	case string:
+		if len(params)%2 == 1 {
+			return []byte{}, errors.New("missing values in input for hSet command")
+		}
+		for _, p := range params {
+			str, ok := p.(string)
+			if !ok {
+				return []byte{}, errors.New("invalid format")
+			}
+			cmd = append(cmd, str)
+		}
+		return []byte{}, nil
+	case map[string]string:
+		for k, v := range param {
+			cmd = append(cmd, k, v)
+		}
+	default:
+		return []byte{}, errors.New("invalid format")
+	}
+
+	return ms.handleRequest(buildRESPCommand(cmd...))
 }
