@@ -173,3 +173,34 @@ func (ms *memoryServer) hSet(key string, params ...interface{}) ([]byte, error) 
 
 	return ms.handleRequest(buildRESPCommand(cmd...))
 }
+
+func (ms *memoryServer) hGet(key, field string) ([]byte, error) {
+	if key == "" || field == "" {
+		return nil, errors.New("missing key or field for hGet command")
+	}
+	return ms.handleRequest(buildRESPCommand("HGET", key, field))
+}
+
+func (ms *memoryServer) hGetAll(key string, fields ...string) ([]byte, error) {
+	if key == "" || len(fields) == 0 {
+		return nil, errors.New("missing key or fields for hGetAll command")
+	}
+	cmd := []string{"HGET", key}
+
+	for _, v := range fields {
+		cmd = append(cmd, v)
+	}
+	return ms.handleRequest(buildRESPCommand(cmd...))
+}
+
+func (ms *memoryServer) hDel(key string, fields ...string) ([]byte, error) {
+	if key == "" || len(fields) == 0 {
+		return nil, errors.New("missing key or fields for hDel command")
+	}
+	cmd := []string{"HDEL", key}
+
+	for _, v := range fields {
+		cmd = append(cmd, v)
+	}
+	return ms.handleRequest(buildRESPCommand(cmd...))
+}
