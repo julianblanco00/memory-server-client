@@ -30,7 +30,7 @@ func buildRESPCommand(vals ...string) string {
 func buildRequestId() (string, error) {
 	id, err := uuid.NewRandom()
 	if err != nil {
-		return "", nil
+		return "", err
 	}
 
 	clean := strings.ReplaceAll(id.String(), "-", "")
