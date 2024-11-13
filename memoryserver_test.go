@@ -24,6 +24,16 @@ func TestMemoryServer(t *testing.T) {
 		}
 	})
 
+	t.Run("key exists", func(t *testing.T) {
+		v, err := ms.Exists("mykey")
+		if err != nil {
+			t.Error("error setting mykey")
+		}
+		if string(v) != "1" {
+			t.Error("mykey should exist")
+		}
+	})
+
 	t.Run("get non-empty key", func(t *testing.T) {
 		v, err := ms.Get("mykey")
 		if err != nil {

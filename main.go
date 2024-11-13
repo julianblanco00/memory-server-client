@@ -123,6 +123,29 @@ func (ms *memoryServer) Set(key, val string) ([]byte, error) {
 	return ms.handleRequest(buildRESPCommand("SET", key, val))
 }
 
+func (ms *memoryServer) Exists(key ...string) ([]byte, error) {
+	keys := []string{"EXISTS"}
+
+	for _, k := range key {
+		keys = append(keys, k)
+	}
+
+	return ms.handleRequest(buildRESPCommand(keys...))
+}
+
+func (ms *memoryServer) Append(key, val string) ([]byte, error) {
+	v, err := ms.Exists(key)
+	if err != nil {
+		return nil, err
+	}
+
+	if string(v) == "0" {
+		return ms.Set(key, val)
+	}
+
+	return ms.handleRequest(buildRESPCommand("APPEND", key, val))
+}
+
 func (ms *memoryServer) SetWithOpts(key, val string, opts [][]string) ([]byte, error) {
 	cmd := []string{"SET", key, val}
 	for _, opt := range opts {
