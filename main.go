@@ -134,15 +134,6 @@ func (ms *memoryServer) Exists(key ...string) ([]byte, error) {
 }
 
 func (ms *memoryServer) Append(key, val string) ([]byte, error) {
-	v, err := ms.Exists(key)
-	if err != nil {
-		return nil, err
-	}
-
-	if string(v) == "0" {
-		return ms.Set(key, val)
-	}
-
 	return ms.handleRequest(buildRESPCommand("APPEND", key, val))
 }
 
