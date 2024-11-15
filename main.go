@@ -10,7 +10,7 @@ import (
 	"github.com/google/uuid"
 )
 
-type memoryServer struct {
+type MemoryServer struct {
 	client          net.Conn
 	pendingRequests map[string]chan ([]byte)
 	host            string
@@ -38,15 +38,15 @@ func buildRequestId() (string, error) {
 	return clean, nil
 }
 
-func New(host, port string) *memoryServer {
-	return &memoryServer{
+func New(host, port string) *MemoryServer {
+	return &MemoryServer{
 		host:            host,
 		port:            port,
 		pendingRequests: make(map[string]chan ([]byte)),
 	}
 }
 
-func (ms *memoryServer) listenConnectionEvents() (string, error) {
+func (ms *MemoryServer) listenConnectionEvents() (string, error) {
 	for {
 		buf := make([]byte, 1024)
 		n, err := ms.client.Read(buf)
@@ -62,7 +62,18 @@ func (ms *memoryServer) listenConnectionEvents() (string, error) {
 	}
 }
 
-func (ms *memoryServer) Connect() error {
+func (ms *MemoryServer) Disconnect() error {
+	err := ms.client.Close()
+	if err != nil {
+		return err
+	}
+
+	ms.pendingRequests = nil
+
+	return nil
+}
+
+func (ms *MemoryServer) Connect() error {
 	conn, err := net.Dial("tcp", fmt.Sprintf("%s:%s", ms.host, ms.port))
 	if err != nil {
 		return err
@@ -75,7 +86,7 @@ func (ms *memoryServer) Connect() error {
 	return nil
 }
 
-func (ms *memoryServer) handleRequest(cmd string) ([]byte, error) {
+func (ms *MemoryServer) handleRequest(cmd string) ([]byte, error) {
 	c := make(chan []byte)
 	id, err := buildRequestId()
 	if err != nil {
@@ -105,11 +116,11 @@ func (ms *memoryServer) handleRequest(cmd string) ([]byte, error) {
 	return r, nil
 }
 
-func (ms *memoryServer) Get(key string) ([]byte, error) {
+func (ms *MemoryServer) Get(key string) ([]byte, error) {
 	return ms.handleRequest(buildRESPCommand("GET", key))
 }
 
-func (ms *memoryServer) Del(key ...string) ([]byte, error) {
+func (ms *MemoryServer) Del(key ...string) ([]byte, error) {
 	keys := []string{"DEL"}
 
 	for _, k := range key {
@@ -119,11 +130,11 @@ func (ms *memoryServer) Del(key ...string) ([]byte, error) {
 	return ms.handleRequest(buildRESPCommand(keys...))
 }
 
-func (ms *memoryServer) Set(key, val string) ([]byte, error) {
+func (ms *MemoryServer) Set(key, val string) ([]byte, error) {
 	return ms.handleRequest(buildRESPCommand("SET", key, val))
 }
 
-func (ms *memoryServer) Exists(key ...string) ([]byte, error) {
+func (ms *MemoryServer) Exists(key ...string) ([]byte, error) {
 	keys := []string{"EXISTS"}
 
 	for _, k := range key {
@@ -133,11 +144,11 @@ func (ms *memoryServer) Exists(key ...string) ([]byte, error) {
 	return ms.handleRequest(buildRESPCommand(keys...))
 }
 
-func (ms *memoryServer) Append(key, val string) ([]byte, error) {
+func (ms *MemoryServer) Append(key, val string) ([]byte, error) {
 	return ms.handleRequest(buildRESPCommand("APPEND", key, val))
 }
 
-func (ms *memoryServer) SetWithOpts(key, val string, opts [][]string) ([]byte, error) {
+func (ms *MemoryServer) SetWithOpts(key, val string, opts [][]string) ([]byte, error) {
 	cmd := []string{"SET", key, val}
 	for _, opt := range opts {
 		cmd = append(cmd, opt...)
@@ -146,7 +157,7 @@ func (ms *memoryServer) SetWithOpts(key, val string, opts [][]string) ([]byte, e
 	return ms.handleRequest(buildRESPCommand(cmd...))
 }
 
-func (ms *memoryServer) mSet(params ...string) ([]byte, error) {
+func (ms *MemoryServer) mSet(params ...string) ([]byte, error) {
 	if len(params)%2 == 1 {
 		return []byte{}, errors.New("missing values in input for mSet command")
 	}
@@ -160,7 +171,7 @@ func (ms *memoryServer) mSet(params ...string) ([]byte, error) {
 	return ms.handleRequest(buildRESPCommand(kvs...))
 }
 
-func (ms *memoryServer) hSet(key string, params ...interface{}) ([]byte, error) {
+func (ms *MemoryServer) hSet(key string, params ...interface{}) ([]byte, error) {
 	// params can be: [field, value, field, value, ...] or map[string]string
 	cmd := []string{key}
 
@@ -188,14 +199,14 @@ func (ms *memoryServer) hSet(key string, params ...interface{}) ([]byte, error) 
 	return ms.handleRequest(buildRESPCommand(cmd...))
 }
 
-func (ms *memoryServer) hGet(key, field string) ([]byte, error) {
+func (ms *MemoryServer) hGet(key, field string) ([]byte, error) {
 	if key == "" || field == "" {
 		return nil, errors.New("missing key or field for hGet command")
 	}
 	return ms.handleRequest(buildRESPCommand("HGET", key, field))
 }
 
-func (ms *memoryServer) hGetAll(key string, fields ...string) ([]byte, error) {
+func (ms *MemoryServer) hGetAll(key string, fields ...string) ([]byte, error) {
 	if key == "" || len(fields) == 0 {
 		return nil, errors.New("missing key or fields for hGetAll command")
 	}
@@ -207,7 +218,7 @@ func (ms *memoryServer) hGetAll(key string, fields ...string) ([]byte, error) {
 	return ms.handleRequest(buildRESPCommand(cmd...))
 }
 
-func (ms *memoryServer) hDel(key string, fields ...string) ([]byte, error) {
+func (ms *MemoryServer) hDel(key string, fields ...string) ([]byte, error) {
 	if key == "" || len(fields) == 0 {
 		return nil, errors.New("missing key or fields for hDel command")
 	}
